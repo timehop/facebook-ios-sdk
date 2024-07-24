@@ -88,11 +88,13 @@ static NSMutableDictionary<NSNumber *, id> *g_startTimesWithTags = nil;
 - (void)emitToNSLog
 {
   if (_active) {
-    for (NSString *key in g_stringsToReplace.keyEnumerator) {
-      [_internalContents replaceOccurrencesOfString:key
-                                         withString:g_stringsToReplace[key]
-                                            options:NSLiteralSearch
-                                              range:NSMakeRange(0, _internalContents.length)];
+      @synchronized (self) {
+        for (NSString *key in g_stringsToReplace.keyEnumerator) {
+          [_internalContents replaceOccurrencesOfString:key
+                                             withString:g_stringsToReplace[key]
+                                                options:NSLiteralSearch
+                                                  range:NSMakeRange(0, _internalContents.length)];
+        }
     }
 
     // Xcode 4.4 hangs on extremely long NSLog output (http://openradar.appspot.com/11972490).  Truncate if needed.
@@ -189,7 +191,9 @@ static NSMutableDictionary<NSNumber *, id> *g_startTimesWithTags = nil;
 
   if (FBSDKSettings.sharedSettings.loggingBehaviors.count > 0) { // otherwise there's no logging.
     if (!g_stringsToReplace) {
-      g_stringsToReplace = [NSMutableDictionary new];
+        @synchronized (self) {
+          [g_stringsToReplace setValue:replaceWith forKey:replace];
+        }
     }
 
     [g_stringsToReplace setValue:replaceWith forKey:replace];
